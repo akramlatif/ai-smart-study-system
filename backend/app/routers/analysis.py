@@ -247,7 +247,7 @@ async def chat(
     body: dict,
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
-    redis: aioredis.Redis = Depends(get_redis),
+    redis: Any = Depends(get_redis),
 ):
     message = body.get("message", "")
     if not message:
@@ -298,7 +298,7 @@ async def analyze_stream(
     session_id: str,
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
-    redis: aioredis.Redis = Depends(get_redis),
+    redis: Any = Depends(get_redis),
 ):
     """SSE endpoint for streaming analysis progress."""
     import json as _json
