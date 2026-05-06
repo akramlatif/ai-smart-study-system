@@ -1,12 +1,8 @@
-import uuid
-from datetime import datetime, timezone
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Any
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-import redis.asyncio as aioredis
-from openai import AsyncOpenAI
 
 from app.core.database import get_db
 from app.core.redis import get_redis
@@ -25,7 +21,8 @@ from app.repositories.topic import TopicRepository
 from app.repositories.explanation import ExplanationRepository
 from app.repositories.quiz import QuizRepository
 
-router = APIRouter(tags=["analysis"])
+from datetime import datetime, timezone
+from openai import AsyncOpenAI
 
 
 def _get_openai_client() -> AsyncOpenAI:
@@ -39,7 +36,7 @@ async def _run_pipeline(
     input_type: str,
     source_text: str,
     db: AsyncSession,
-    redis: aioredis.Redis,
+    redis: Any,
     openai_client: AsyncOpenAI,
     difficulty_filter: str | None = None,
 ) -> dict:
@@ -67,14 +64,14 @@ async def _run_pipeline(
     # Persist topic
     topic_repo = TopicRepository(db)
     db_topic = await topic_repo.create(
-        session_id=uuid.UUID(session_id),
+        session_id=session_id,
         name=topic.main_topic,
         confidence=topic.confidence,
         is_main=True,
     )
     for subtopic_name in topic.subtopics:
         await topic_repo.create(
-            session_id=uuid.UUID(session_id),
+            session_id=session_id,
             name=subtopic_name,
             confidence=topic.confidence,
             is_main=False,
@@ -138,7 +135,7 @@ async def _run_pipeline(
         if q.options:
             options_json = [o.model_dump() for o in q.options]
         questions_data.append({
-            "session_id": uuid.UUID(session_id),
+            "session_id": session_id,
             "topic_id": db_topic.id,
             "question_type": q.question_type,
             "difficulty": q.difficulty,
@@ -183,6 +180,9 @@ async def _run_pipeline(
     }
 
 
+router = APIRouter(tags=["analysis"])
+
+
 @router.post("/sessions/{session_id}/analyze")
 async def analyze(
     session_id: str,
@@ -192,7 +192,7 @@ async def analyze(
     file: UploadFile | None = File(None),
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
-    redis: aioredis.Redis = Depends(get_redis),
+    redis: Any = Depends(get_redis),
 ):
     openai_client = _get_openai_client()
     text = ""

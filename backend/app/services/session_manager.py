@@ -1,11 +1,8 @@
-"""
-SessionManager service — creates, retrieves, and manages study sessions.
-"""
 import json
 import uuid
 from datetime import datetime, timezone
+from typing import Any
 
-import redis.asyncio as aioredis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.redis import SESSION_TTL_SECONDS
@@ -65,16 +62,16 @@ async def create_session(
 async def get_session(
     session_id: str,
     db: AsyncSession,
-    redis: aioredis.Redis,
+    redis: Any,
 ) -> StudySession | None:
-    """Try Redis first, fall back to Postgres."""
+    """Try Redis/memory first, fall back to Postgres/SQLite."""
     cached = await redis.get(_session_key(session_id))
     if cached:
         return _deserialize_session(cached)
 
-    # Fallback: reconstruct from Postgres
+    # Fallback: reconstruct from database
     repo = SessionRepository(db)
-    db_session = await repo.get_by_id(uuid.UUID(session_id))
+    db_session = await repo.get_by_id(session_id)
     if not db_session:
         return None
 
@@ -102,7 +99,7 @@ async def get_session(
 async def append_interaction(
     session_id: str,
     interaction: Interaction,
-    redis: aioredis.Redis,
+    redis: Any,
 ) -> None:
     """Append an interaction to the session in Redis and reset TTL."""
     cached = await redis.get(_session_key(session_id))
@@ -129,21 +126,18 @@ async def reset_session(
     session_id: str,
     user_id: str,
     db: AsyncSession,
-    redis: aioredis.Redis,
+    redis: Any,
 ) -> StudySession:
     """End the current session and create a new one, preserving previous_id."""
-    # End old session in Postgres
+    # End old session in database
     repo = SessionRepository(db)
-    await repo.end_session(uuid.UUID(session_id))
+    await repo.end_session(session_id)
 
-    # Clear Redis
+    # Clear cache
     await redis.delete(_session_key(session_id))
 
     # Create new session with previous_id pointing to old session
-    db_new = await repo.create(
-        user_id=uuid.UUID(user_id),
-        previous_id=uuid.UUID(session_id),
-    )
+    db_new = await repo.create(user_id=user_id, previous_id=session_id)
 
     now = datetime.now(timezone.utc)
     new_session = StudySession(
@@ -169,7 +163,7 @@ async def reset_session(
 async def get_summary(
     session_id: str,
     db: AsyncSession,
-    redis: aioredis.Redis,
+    redis: Any,
 ) -> SessionSummary:
     """Build a session summary from Redis (or Postgres fallback)."""
     session = await get_session(session_id, db, redis)
