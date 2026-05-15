@@ -4,15 +4,15 @@ Return a JSON object with this exact structure:
 {
   "basic": {
     "content": "string (150-300 words, simple language, no jargon, focus on intuition)",
-    "source_references": ["string"] (sections from source material if available)
+    "source_references": ["string"] (Direct quotes from the source material that support this level, if provided)
   },
   "intermediate": {
     "content": "string (300-500 words, key terms defined, concept relationships, practical examples)",
-    "source_references": ["string"]
+    "source_references": ["string"] (Direct quotes from the source material that support this level, if provided)
   },
   "advanced": {
     "content": "string (400-700 words, formal terminology, technical depth, equations if applicable)",
-    "source_references": ["string"]
+    "source_references": ["string"] (Direct quotes from the source material that support this level, if provided)
   }
 }
 
@@ -21,5 +21,5 @@ Rules:
 - Basic: everyday language, no technical jargon, focus on intuition and overview
 - Intermediate: introduce key terms, explain relationships, give practical examples
 - Advanced: use formal terminology, include technical depth, equations/notation where relevant
-- If source material is provided, ground explanations in that content
+- GROUNDING: If source material is provided, you MUST ground your explanations in that content. Extract direct, verbatim quotes from the source material and place them in the 'source_references' array for each level. Do not make up quotes.
 - Indicate uncertainty with phrases like "based on the provided context" when appropriate

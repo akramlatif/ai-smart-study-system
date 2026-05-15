@@ -1,83 +1,80 @@
 """
 AccuracyController service — validates explanation relevance and quiz structure.
+Uses keyword overlap for relevance (no embedding API needed with Gemini).
 """
-import numpy as np
 from app.schemas.common import ValidationResult
 from app.schemas.explanation import ExplanationSet
 from app.schemas.quiz import QuizQuestion
 from app.schemas.topic import TopicAnalysis
 
 
-def _cosine_similarity(a: list[float], b: list[float]) -> float:
-    """Compute cosine similarity between two embedding vectors."""
-    va = np.array(a, dtype=float)
-    vb = np.array(b, dtype=float)
-    norm_a = np.linalg.norm(va)
-    norm_b = np.linalg.norm(vb)
-    if norm_a == 0 or norm_b == 0:
-        return 0.0
-    return float(np.dot(va, vb) / (norm_a * norm_b))
+def _keyword_overlap_score(text_a: str, text_b: str) -> float:
+    """
+    Simple keyword overlap relevance score.
+    Returns fraction of significant words in text_a that appear in text_b.
+    Used as a lightweight alternative to embedding cosine similarity.
+    """
+    stop_words = {
+        "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
+        "have", "has", "had", "do", "does", "did", "will", "would", "could",
+        "should", "may", "might", "shall", "can", "to", "of", "in", "for",
+        "on", "with", "at", "by", "from", "as", "into", "through", "and",
+        "or", "but", "if", "then", "that", "this", "it", "its", "not",
+    }
+
+    def keywords(text: str) -> set[str]:
+        words = text.lower().split()
+        return {w.strip(".,;:!?\"'()[]") for w in words if w not in stop_words and len(w) > 3}
+
+    kw_a = keywords(text_a)
+    kw_b = keywords(text_b)
+
+    if not kw_a:
+        return 1.0  # no keywords to check, pass
+
+    overlap = kw_a & kw_b
+    return len(overlap) / len(kw_a)
 
 
 async def validate_explanation(
     explanation_set: ExplanationSet,
     topic: TopicAnalysis,
     source_text: str,
-    openai_client,
+    openai_client=None,  # kept for signature compatibility
 ) -> ValidationResult:
     """
-    Validate explanation relevance using embedding cosine similarity.
-
-    If no source_text is provided, skip the check and return valid.
-    Rejects if similarity < 0.80.
+    Validate explanation relevance.
+    If no source_text, skip check and return valid.
+    Uses keyword overlap as relevance proxy (threshold: 0.15 for keyword overlap).
     """
     if not source_text or not source_text.strip():
         return ValidationResult(valid=True)
 
-    # Combine all explanation content
     combined_explanation = " ".join([
         explanation_set.basic.content,
         explanation_set.intermediate.content,
         explanation_set.advanced.content,
     ])
 
-    try:
-        response = await openai_client.embeddings.create(
-            model="text-embedding-3-small",
-            input=[combined_explanation, source_text[:8000]],
+    score = _keyword_overlap_score(combined_explanation, source_text)
+
+    # Keyword overlap threshold is lower than embedding similarity (0.15 vs 0.80)
+    if score < 0.15:
+        return ValidationResult(
+            valid=False,
+            error_code="RELEVANCE_BELOW_THRESHOLD",
+            error_message=(
+                f"Explanation relevance score {score:.2f} is below the required threshold."
+            ),
         )
-        emb_explanation = response.data[0].embedding
-        emb_source = response.data[1].embedding
-
-        similarity = _cosine_similarity(emb_explanation, emb_source)
-
-        if similarity < 0.80:
-            return ValidationResult(
-                valid=False,
-                error_code="RELEVANCE_BELOW_THRESHOLD",
-                error_message=(
-                    f"Explanation relevance score {similarity:.2f} is below the "
-                    "required threshold of 0.80."
-                ),
-            )
-        return ValidationResult(valid=True)
-
-    except Exception as e:
-        # If embedding call fails, allow the explanation through
-        return ValidationResult(valid=True)
+    return ValidationResult(valid=True)
 
 
 def validate_quiz(
     questions: list[QuizQuestion],
     session_context: str,
 ) -> ValidationResult:
-    """
-    Validate quiz question structure.
-
-    Checks:
-    - All questions have valid difficulty labels
-    - MCQ questions have exactly 4 options with exactly 1 correct
-    """
+    """Validate quiz question structure."""
     valid_difficulties = {"easy", "medium", "hard"}
 
     for i, q in enumerate(questions):

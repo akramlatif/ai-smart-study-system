@@ -10,8 +10,9 @@ passlib[bcrypt]==1.7.4
 python-multipart==0.0.9
 httpx==0.27.0
 openai==1.30.1
-pymupdf==1.24.3
-numpy==1.26.4
+google-generativeai==0.8.3
+pymupdf
+numpy
 python-dotenv==1.0.1
 aiofiles==23.2.1
 tenacity==8.3.0

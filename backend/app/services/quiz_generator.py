@@ -1,14 +1,14 @@
 """
-QuizGenerator service — generates quiz questions using GPT-4o.
+QuizGenerator service — generates quiz questions using Gemini.
 """
 import os
-import json
 import uuid
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from app.schemas.topic import TopicAnalysis
 from app.schemas.explanation import ExplanationSet
 from app.schemas.quiz import AnswerOption, QuizQuestion
+from app.core.gemini import generate_json
 
 _PROMPT_PATH = os.path.join(
     os.path.dirname(__file__), "../../prompts/quiz_generation.txt"
@@ -47,51 +47,34 @@ async def generate(
     topic: TopicAnalysis,
     explanations: ExplanationSet,
     session_context: str,
-    openai_client,
+    openai_client=None,  # kept for signature compatibility
     difficulty_filter: str | None = None,
 ) -> list[QuizQuestion]:
-    """
-    Generate quiz questions for a topic.
-
-    Returns at least 5 questions with at least 1 easy, 1 medium, 1 hard.
-    """
+    """Generate quiz questions for a topic using Gemini."""
     system_prompt = _load_system_prompt()
 
-    user_content_parts = [
-        f"Topic: {topic.main_topic}",
-    ]
+    user_content_parts = [f"Topic: {topic.main_topic}"]
     if topic.subtopics:
         user_content_parts.append(f"Subtopics: {', '.join(topic.subtopics)}")
 
     user_content_parts.append(f"\n[Basic Explanation]\n{explanations.basic.content}")
-    user_content_parts.append(
-        f"\n[Intermediate Explanation]\n{explanations.intermediate.content}"
-    )
+    user_content_parts.append(f"\n[Intermediate Explanation]\n{explanations.intermediate.content}")
     user_content_parts.append(f"\n[Advanced Explanation]\n{explanations.advanced.content}")
 
     if session_context:
         user_content_parts.append(f"\n[Session Context]\n{session_context}")
 
     if difficulty_filter:
-        user_content_parts.append(
-            f"\nGenerate only {difficulty_filter} difficulty questions."
-        )
+        user_content_parts.append(f"\nGenerate only {difficulty_filter} difficulty questions.")
 
     user_content = "\n".join(user_content_parts)
 
-    response = await openai_client.chat.completions.create(
-        model="gpt-4o",
-        response_format={"type": "json_object"},
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_content},
-        ],
+    data = await generate_json(
+        system_prompt=system_prompt,
+        user_message=user_content,
         temperature=0.7,
         max_tokens=3000,
     )
-
-    raw = response.choices[0].message.content
-    data = json.loads(raw)
 
     questions_raw = data.get("questions", [])
     questions: list[QuizQuestion] = []
@@ -109,6 +92,7 @@ async def generate(
                 options=options,
                 correct_answer=q.get("correct_answer", ""),
                 explanation=q.get("explanation"),
+                hint=q.get("hint"),
                 saved_for_review=False,
             )
         )

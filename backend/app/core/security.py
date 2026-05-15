@@ -1,26 +1,32 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.core.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 bearer_scheme = HTTPBearer()
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    """Hash a password using bcrypt."""
+    pwd_bytes = password.encode("utf-8")
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(pwd_bytes, salt).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    """Verify a plain password against a bcrypt hash."""
+    try:
+        return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    except Exception:
+        return False
 
 
 def create_access_token(subject: str, extra: dict[str, Any] | None = None) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.JWT_EXPIRE_MINUTES)
-    payload = {"sub": subject, "exp": expire}
+    payload: dict[str, Any] = {"sub": subject, "exp": expire}
     if extra:
         payload.update(extra)
     return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
@@ -43,5 +49,8 @@ async def get_current_user_id(
     payload = decode_token(credentials.credentials)
     user_id: str | None = payload.get("sub")
     if not user_id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        )
     return user_id

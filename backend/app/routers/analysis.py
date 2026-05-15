@@ -6,10 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.redis import get_redis
-from app.core.config import settings
 from app.core.security import get_current_user_id
 from app.schemas.session import Interaction
-from app.schemas.topic import TopicAnalysis
 import app.services.session_manager as session_manager
 import app.services.input_handler as input_handler
 import app.services.content_extractor as content_extractor
@@ -22,11 +20,6 @@ from app.repositories.explanation import ExplanationRepository
 from app.repositories.quiz import QuizRepository
 
 from datetime import datetime, timezone
-from openai import AsyncOpenAI
-
-
-def _get_openai_client() -> AsyncOpenAI:
-    return AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
 
 async def _run_pipeline(
@@ -37,7 +30,7 @@ async def _run_pipeline(
     source_text: str,
     db: AsyncSession,
     redis: Any,
-    openai_client: AsyncOpenAI,
+    openai_client=None,  # unused — Gemini is configured globally
     difficulty_filter: str | None = None,
 ) -> dict:
     """Run the full AI pipeline and return results."""
@@ -194,7 +187,6 @@ async def analyze(
     db: AsyncSession = Depends(get_db),
     redis: Any = Depends(get_redis),
 ):
-    openai_client = _get_openai_client()
     text = ""
     source_text = ""
 
@@ -237,7 +229,6 @@ async def analyze(
         source_text=source_text,
         db=db,
         redis=redis,
-        openai_client=openai_client,
     )
 
 
@@ -252,8 +243,6 @@ async def chat(
     message = body.get("message", "")
     if not message:
         raise HTTPException(status_code=422, detail="Message is required.")
-
-    openai_client = _get_openai_client()
 
     # Detect shortcuts
     shortcut = input_handler.detect_shortcut(message)
@@ -284,7 +273,6 @@ async def chat(
         source_text=source_text,
         db=db,
         redis=redis,
-        openai_client=openai_client,
         difficulty_filter=difficulty_filter,
     )
     result["response_type"] = "explanation"
@@ -317,3 +305,39 @@ async def analyze_stream(
             yield f"data: {data}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@router.post("/sessions/{session_id}/revision")
+async def generate_revision(
+    session_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+    redis: Any = Depends(get_redis),
+):
+    """Generate revision materials (flashcards, formulas, definitions, exam Qs)."""
+    import app.services.revision_generator as revision_generator
+
+    session = await session_manager.get_session(session_id, db, redis)
+    if not session or session.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Session not found.")
+
+    if not session.topics:
+        raise HTTPException(status_code=422, detail="No topic available. Analyze content first.")
+
+    topic = session.topics[-1]
+    explanations = session.explanations[-1] if session.explanations else None
+    context = session_manager.build_context_window(session)
+
+    source_text = ""
+    user_msgs = [i for i in session.interactions if i.role == "user"]
+    if user_msgs:
+        source_text = user_msgs[0].content
+
+    revision = await revision_generator.generate(
+        topic=topic,
+        explanations=explanations,
+        source_text=source_text,
+        session_context=context,
+        session_id=session_id,
+    )
+    return revision

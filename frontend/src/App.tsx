@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Layout } from './components/layout/Layout'
 import { DashboardPage } from './pages/Dashboard/DashboardPage'
@@ -7,7 +7,9 @@ import { QuizPage } from './pages/Quiz/QuizPage'
 import { LibraryPage } from './pages/Library/LibraryPage'
 import { LoginPage } from './pages/Auth/LoginPage'
 import { RegisterPage } from './pages/Auth/RegisterPage'
+import { SettingsPage } from './pages/Settings/SettingsPage'
 import { useAuthStore } from './store/authStore'
+import { useUIStore } from './store/uiStore'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore()
@@ -19,6 +21,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   const { isAuthenticated } = useAuthStore()
+  const { theme } = useUIStore()
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }, [theme])
 
   return (
     <BrowserRouter>
@@ -42,7 +53,7 @@ function App() {
           <Route path="/workspace" element={<WorkspacePage />} />
           <Route path="/quiz" element={<QuizPage />} />
           <Route path="/library" element={<LibraryPage />} />
-          <Route path="/settings" element={<div className="p-6"><h1 className="text-2xl font-bold">Settings</h1><p className="text-gray-500 mt-2">Coming soon.</p></div>} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

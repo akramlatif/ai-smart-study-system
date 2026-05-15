@@ -47,6 +47,7 @@ async def get_quiz(
                 options=options,
                 correct_answer=q.correct_answer,
                 explanation=q.explanation,
+                hint=q.hint,
                 saved_for_review=q.saved_for_review,
             )
         )

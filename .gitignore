@@ -16,11 +16,18 @@ htmlcov/
 .coverage
 *.log
 
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+backend/smartstudy.db
+
 # Node
 node_modules/
 dist/
 .env.local
 .env.production
+.env.development
 *.tsbuildinfo
 
 # IDE
@@ -38,3 +45,8 @@ backend/uploads/
 
 # Docker
 *.override.yml
+
+# Agent/Other
+.kiro/
+.gemini/
+analysis_results.md

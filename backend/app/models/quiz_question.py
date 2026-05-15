@@ -8,16 +8,7 @@ from app.core.database import Base
 
 class QuizQuestion(Base):
     __tablename__ = "quiz_questions"
-    __table_args__ = (
-        CheckConstraint(
-            "question_type IN ('multiple_choice', 'short_answer')",
-            name="ck_quiz_question_type",
-        ),
-        CheckConstraint(
-            "difficulty IN ('easy', 'medium', 'hard')",
-            name="ck_quiz_difficulty",
-        ),
-    )
+    __table_args__ = ()
 
     id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())
@@ -37,6 +28,7 @@ class QuizQuestion(Base):
     options: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON string
     correct_answer: Mapped[str] = mapped_column(Text, nullable=False)
     explanation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    hint: Mapped[str | None] = mapped_column(Text, nullable=True)
     saved_for_review: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)

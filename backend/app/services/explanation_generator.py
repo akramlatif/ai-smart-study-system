@@ -1,12 +1,12 @@
 """
-ExplanationGenerator service — generates multi-level explanations using GPT-4o.
+ExplanationGenerator service — generates multi-level explanations using Gemini.
 """
 import os
-import json
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from app.schemas.topic import TopicAnalysis
 from app.schemas.explanation import ExplanationContent, ExplanationSet
+from app.core.gemini import generate_json
 
 _PROMPT_PATH = os.path.join(
     os.path.dirname(__file__), "../../prompts/explanation_generation.txt"
@@ -33,47 +33,39 @@ async def generate(
     topic: TopicAnalysis,
     session_context: str,
     source_text: str,
-    openai_client,
+    openai_client=None,  # kept for signature compatibility
     topic_id: str = "",
 ) -> ExplanationSet:
-    """
-    Generate all three explanation levels in a single GPT-4o call.
-    """
+    """Generate all three explanation levels in a single Gemini call."""
     system_prompt = _load_system_prompt()
 
-    user_content_parts = [
-        f"Topic: {topic.main_topic}",
-    ]
+    user_content_parts = [f"Topic: {topic.main_topic}"]
     if topic.subtopics:
         user_content_parts.append(f"Subtopics: {', '.join(topic.subtopics)}")
     if session_context:
         user_content_parts.append(f"\n[Session Context]\n{session_context}")
     if source_text:
-        excerpt = source_text[:3000]
-        user_content_parts.append(f"\n[Source Material]\n{excerpt}")
+        user_content_parts.append(f"\n[Source Material]\n{source_text}")
 
     user_content = "\n".join(user_content_parts)
 
-    response = await openai_client.chat.completions.create(
-        model="gpt-4o",
-        response_format={"type": "json_object"},
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_content},
-        ],
+    data = await generate_json(
+        system_prompt=system_prompt,
+        user_message=user_content,
         temperature=0.3,
-        max_tokens=2000,
+        max_tokens=8192,
     )
-
-    raw = response.choices[0].message.content
-    data = json.loads(raw)
 
     def _parse_level(level_key: str, level_name: str) -> ExplanationContent:
         level_data = data.get(level_key, {})
-        content = level_data.get("content", "")
-        refs = level_data.get("source_references", [])
-        if not isinstance(refs, list):
+        if isinstance(level_data, str):
+            content = level_data
             refs = []
+        else:
+            content = level_data.get("content", "")
+            refs = level_data.get("source_references", [])
+            if not isinstance(refs, list):
+                refs = []
         return ExplanationContent(
             level=level_name,
             content=content,
@@ -81,13 +73,9 @@ async def generate(
             source_references=refs,
         )
 
-    basic = _parse_level("basic", "basic")
-    intermediate = _parse_level("intermediate", "intermediate")
-    advanced = _parse_level("advanced", "advanced")
-
     return ExplanationSet(
         topic_id=topic_id,
-        basic=basic,
-        intermediate=intermediate,
-        advanced=advanced,
+        basic=_parse_level("basic", "basic"),
+        intermediate=_parse_level("intermediate", "intermediate"),
+        advanced=_parse_level("advanced", "advanced"),
     )

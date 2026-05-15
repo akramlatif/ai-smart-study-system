@@ -8,8 +8,11 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379"
     USE_MEMORY_CACHE: bool = True  # Use in-memory dict instead of Redis
 
-    # OpenAI
+    # OpenAI (legacy — kept for compatibility)
     OPENAI_API_KEY: str = ""
+
+    # Google Gemini
+    GEMINI_API_KEY: str = ""
 
     # JWT
     JWT_SECRET_KEY: str = "change-this-to-a-long-random-secret"

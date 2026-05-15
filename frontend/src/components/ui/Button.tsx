@@ -26,9 +26,9 @@ export function Button({
         {
           'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500':
             variant === 'primary',
-          'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 focus:ring-gray-300':
+          'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700 focus:ring-gray-300':
             variant === 'secondary',
-          'text-gray-600 hover:bg-gray-100 focus:ring-gray-300': variant === 'ghost',
+          'text-gray-600 hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-800 focus:ring-gray-300': variant === 'ghost',
           'px-3 py-1.5 text-sm': size === 'sm',
           'px-4 py-2 text-sm': size === 'md',
           'px-6 py-3 text-base': size === 'lg',

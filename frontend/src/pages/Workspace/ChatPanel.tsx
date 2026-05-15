@@ -60,7 +60,7 @@ export function ChatPanel() {
   }
 
   return (
-    <div className="flex flex-col h-full border-l border-gray-200 bg-white">
+    <div className="flex flex-col h-full bg-gray-50 dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 transition-colors">
       <TutorHeader />
       <MessageList interactions={interactions} isLoading={chatLoading} />
       <ChatInput onSend={handleSend} disabled={chatLoading || isLoading || !currentSession} />

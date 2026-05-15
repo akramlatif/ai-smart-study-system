@@ -23,7 +23,7 @@ export function NavMenu() {
               'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
               isActive
                 ? 'bg-primary-600 text-white'
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-slate-200'
             )
           }
         >

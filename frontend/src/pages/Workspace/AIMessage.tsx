@@ -1,4 +1,5 @@
 import React from 'react'
+import { MarkdownRenderer } from '../../components/ui/MarkdownRenderer'
 
 interface AIMessageProps {
   content: string
@@ -6,9 +7,9 @@ interface AIMessageProps {
 
 export function AIMessage({ content }: AIMessageProps) {
   return (
-    <div className="flex justify-start mb-3">
-      <div className="max-w-xs lg:max-w-sm bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-2.5">
-        <p className="text-sm text-gray-700 leading-relaxed">{content}</p>
+    <div className="flex justify-start mb-4">
+      <div className="max-w-[85%] lg:max-w-md bg-gray-100 dark:bg-slate-800 rounded-2xl rounded-tl-sm px-4 py-3 transition-colors">
+        <MarkdownRenderer content={content} />
       </div>
     </div>
   )

@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp, Quote } from 'lucide-react'
 import { Card } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
+import { MarkdownRenderer } from '../../components/ui/MarkdownRenderer'
 
 interface SubtopicCardProps {
   title: string
@@ -19,7 +20,7 @@ export function SubtopicCard({ title, content, sourceReferences = [] }: Subtopic
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-2">
-          <span className="font-medium text-gray-800 text-sm">{title}</span>
+          <span className="font-medium text-gray-800 dark:text-slate-200 text-sm">{title}</span>
           <Badge variant="synthesized">SYNTHESIZED</Badge>
         </div>
         {expanded ? (
@@ -30,10 +31,20 @@ export function SubtopicCard({ title, content, sourceReferences = [] }: Subtopic
       </button>
       {expanded && (
         <div className="mt-3">
-          <p className="text-sm text-gray-600 leading-relaxed">{content}</p>
+          <MarkdownRenderer content={content} />
           {sourceReferences.length > 0 && (
-            <div className="mt-2 pt-2 border-t border-gray-100">
-              <p className="text-xs text-gray-400">Sources: {sourceReferences.join(', ')}</p>
+            <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-800">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Quote className="w-3 h-3 text-primary-500" />
+                <span className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Source Grounding</span>
+              </div>
+              <ul className="space-y-2">
+                {sourceReferences.map((ref, idx) => (
+                  <li key={idx} className="text-xs text-gray-500 dark:text-slate-400 pl-3 border-l-2 border-primary-200 dark:border-primary-800/50 italic bg-gray-50/50 dark:bg-slate-900/50 py-1.5 pr-2 rounded-r-md">
+                    "{ref}"
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>

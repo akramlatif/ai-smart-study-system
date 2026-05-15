@@ -19,7 +19,7 @@ export function MessageList({ interactions, isLoading = false }: MessageListProp
   if (interactions.length === 0 && !isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center p-4">
-        <p className="text-sm text-gray-400 text-center">
+        <p className="text-sm text-gray-400 dark:text-slate-500 text-center">
           Ask a question or analyze content to start the conversation.
         </p>
       </div>
