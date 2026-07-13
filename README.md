@@ -96,4 +96,3 @@ npm run test                # Component tests (Vitest + RTL)
 npm run test:e2e            # E2E tests (Playwright)
 ```
 
-_Updatea_
