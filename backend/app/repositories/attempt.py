@@ -137,3 +137,38 @@ class AttemptRepository:
         
         result = await self.db.execute(query)
         return result.scalars().all()
+
+    async def get_all_topic_ids(self, user_id: str) -> list[str]:
+        """Return all distinct topic_ids for a user (excluding nulls)."""
+        query = select(QuestionAttempt.topic_id).where(
+            and_(
+                QuestionAttempt.user_id == user_id,
+                QuestionAttempt.topic_id != None,
+            )
+        ).distinct()
+        result = await self.db.execute(query)
+        return [row[0] for row in result.all()]
+
+    async def get_accuracy_by_difficulty(self, user_id: str, difficulty: str, limit: int = 20) -> dict:
+        """Return accuracy for a specific difficulty level from the most recent N attempts."""
+        subq = select(QuestionAttempt).where(
+            and_(
+                QuestionAttempt.user_id == user_id,
+                QuestionAttempt.difficulty == difficulty,
+            )
+        ).order_by(QuestionAttempt.answered_at.desc()).limit(limit).subquery()
+
+        query = select(
+            func.count(subq.c.id).label("total"),
+            func.sum(case((subq.c.is_correct == True, 1), (subq.c.score >= 0.8, 1), else_=0)).label("correct_count"),
+        )
+        result = await self.db.execute(query)
+        row = result.one()
+        total = row.total or 0
+        correct = row.correct_count or 0
+        return {
+            "total": total,
+            "correct": correct,
+            "accuracy": (correct / total) if total > 0 else 0.0,
+        }
+

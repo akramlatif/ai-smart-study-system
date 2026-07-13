@@ -49,8 +49,17 @@ async def generate(
     session_context: str,
     openai_client=None,  # kept for signature compatibility
     difficulty_filter: str | None = None,
+    target_difficulty: str | None = None,
 ) -> list[QuizQuestion]:
-    """Generate quiz questions for a topic using Gemini."""
+    """Generate quiz questions for a topic using Gemini.
+
+    Args:
+        difficulty_filter: If set, generate *only* questions at this difficulty
+            (existing behavior, takes precedence over target_difficulty).
+        target_difficulty: If set (typically from the learner profile), bias
+            the majority of questions toward this difficulty while still
+            including 1-2 questions above/below to keep the quiz dynamic.
+    """
     system_prompt = _load_system_prompt()
 
     user_content_parts = [f"Topic: {topic.main_topic}"]
@@ -64,8 +73,17 @@ async def generate(
     if session_context:
         user_content_parts.append(f"\n[Session Context]\n{session_context}")
 
+    # difficulty_filter takes precedence (strict filter)
     if difficulty_filter:
         user_content_parts.append(f"\nGenerate only {difficulty_filter} difficulty questions.")
+    elif target_difficulty:
+        # Adaptive bias — mostly target difficulty, with a few above/below
+        user_content_parts.append(
+            f"\nBias the questions toward '{target_difficulty}' difficulty "
+            f"(generate the majority at this level), but include 1-2 questions "
+            f"above or below this difficulty to keep the quiz dynamic and "
+            f"challenging."
+        )
 
     user_content = "\n".join(user_content_parts)
 

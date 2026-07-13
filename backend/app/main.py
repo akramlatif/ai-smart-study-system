@@ -5,7 +5,7 @@ import asyncio
 from app.core.config import settings
 from app.core.redis import close_redis
 from app.core.rate_limit import RateLimitMiddleware
-from app.routers import auth, sessions, analysis, quiz, documents, dashboard, learning_modes, tutor, progress
+from app.routers import auth, sessions, analysis, quiz, documents, dashboard, learning_modes, tutor, progress, profile
 
 
 @asynccontextmanager
@@ -55,3 +55,4 @@ app.include_router(dashboard.router, prefix="/api/v1")
 app.include_router(learning_modes.router, prefix="/api/v1")
 app.include_router(tutor.router, prefix="/api/v1")
 app.include_router(progress.router, prefix="/api/v1")
+app.include_router(profile.router, prefix="/api/v1")
