@@ -1,12 +1,13 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, BookOpen, HelpCircle, Library, Settings } from 'lucide-react'
+import { LayoutDashboard, Library, Settings, Compass, HelpCircle, Clock } from 'lucide-react'
 import clsx from 'clsx'
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/workspace', label: 'Workspace', icon: BookOpen },
+  { to: '/workspace', label: 'Workspace', icon: Compass },
   { to: '/quiz', label: 'Quizzes', icon: HelpCircle },
+  { to: '/review', label: 'Review', icon: Clock },
   { to: '/library', label: 'Library', icon: Library },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]

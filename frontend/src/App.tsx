@@ -4,6 +4,7 @@ import { Layout } from './components/layout/Layout'
 import { DashboardPage } from './pages/Dashboard/DashboardPage'
 import { WorkspacePage } from './pages/Workspace/WorkspacePage'
 import { QuizPage } from './pages/Quiz/QuizPage'
+import { ReviewPage } from './pages/Review/ReviewPage'
 import { LibraryPage } from './pages/Library/LibraryPage'
 import { LoginPage } from './pages/Auth/LoginPage'
 import { RegisterPage } from './pages/Auth/RegisterPage'
@@ -52,6 +53,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/workspace" element={<WorkspacePage />} />
           <Route path="/quiz" element={<QuizPage />} />
+          <Route path="/review" element={<ReviewPage />} />
           <Route path="/library" element={<LibraryPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>

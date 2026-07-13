@@ -2,29 +2,11 @@ from datetime import datetime, timezone, timedelta
 from typing import Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, Integer, case
+from sqlalchemy.orm import joinedload
 from app.models.attempt import QuestionAttempt
 
 
-def _compute_sm2(is_correct: bool, current_interval: int, current_ease: float) -> tuple[int, float]:
-    """
-    Simplified SM-2 spaced repetition algorithm.
-    Returns (next_interval_days, new_ease_factor).
-    """
-    quality = 4 if is_correct else 1
-    new_ease = current_ease + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
-    new_ease = max(1.3, min(10.0, new_ease))  # Floor 1.3, max 10.0
-
-    if not is_correct:
-        return 1, new_ease
-
-    if current_interval == 0:
-        next_interval = 1
-    elif current_interval == 1:
-        next_interval = 6
-    else:
-        next_interval = int(current_interval * new_ease)
-        
-    return next_interval, new_ease
+from app.services.spaced_repetition import calculate_sm2
 
 
 class AttemptRepository:
@@ -58,7 +40,6 @@ class AttemptRepository:
         )
 
         # Apply Spaced Repetition logic if graded (binary or float threshold)
-        # Note: if score is provided but is_correct is None, we treat score >= 0.8 as correct
         graded_correct = None
         if is_correct is not None:
             graded_correct = is_correct
@@ -66,17 +47,34 @@ class AttemptRepository:
             graded_correct = score >= 0.8
 
         if graded_correct is not None:
-            # We would normally look up the last attempt for this question/topic to get current interval/ease.
-            # But for simplicity, we start fresh for each new attempt unless we query history.
-            # Let's see if there's a previous attempt for this exact question (or topic for feynman).
-            
-            # Simple heuristic for previous state:
-            prev_interval = 1
+            prev_interval = 0
             prev_ease = 2.5
+
+            # Find the most recent prior attempt for this exact item
+            prior_query = select(QuestionAttempt).where(
+                QuestionAttempt.user_id == user_id,
+            ).order_by(QuestionAttempt.answered_at.desc()).limit(1)
+
+            if quiz_question_id:
+                prior_query = prior_query.where(QuestionAttempt.quiz_question_id == quiz_question_id)
+            elif topic_id:
+                prior_query = prior_query.where(
+                    and_(
+                        QuestionAttempt.topic_id == topic_id,
+                        QuestionAttempt.source_mode == source_mode
+                    )
+                )
+            else:
+                prior_query = None # Fallback if we don't have enough context
+
+            if prior_query is not None:
+                result = await self.db.execute(prior_query)
+                prior_attempt = result.scalar_one_or_none()
+                if prior_attempt:
+                    prev_interval = prior_attempt.review_interval_days
+                    prev_ease = prior_attempt.ease_factor
             
-            # (Optional enhancement: query previous state)
-            
-            next_interval, new_ease = _compute_sm2(
+            next_interval, new_ease = calculate_sm2(
                 is_correct=graded_correct,
                 current_interval=prev_interval,
                 current_ease=prev_ease
@@ -94,7 +92,9 @@ class AttemptRepository:
         if before is None:
             before = datetime.now(timezone.utc)
         
-        query = select(QuestionAttempt).where(
+        query = select(QuestionAttempt).options(
+            joinedload(QuestionAttempt.quiz_question)
+        ).where(
             and_(
                 QuestionAttempt.user_id == user_id,
                 QuestionAttempt.next_review_at != None,

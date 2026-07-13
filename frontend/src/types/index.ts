@@ -266,3 +266,15 @@ export interface RevisionMaterial {
   key_definitions: KeyDefinition[]
   exam_questions: ExamQuestion[]
 }
+
+export interface ReviewItem {
+  attempt_id: string
+  topic_id: string | null
+  session_id: string
+  source_mode: string
+  difficulty: string
+  next_review_at: string
+  review_interval_days: number
+  ease_factor: number
+  question: QuizQuestion | null
+}
