@@ -23,6 +23,7 @@ import app.services.socratic_tutor as socratic_tutor
 from app.repositories.feynman import FeynmanRepository
 from app.repositories.socratic import SocraticRepository
 from app.repositories.topic import TopicRepository
+from app.repositories.attempt import AttemptRepository
 
 router = APIRouter(tags=["learning-modes"])
 
@@ -66,6 +67,19 @@ async def submit_feynman(
         explanation=body.explanation,
         feedback=feedback,
     )
+    
+    # Write attempt history
+    attempt_repo = AttemptRepository(db)
+    await attempt_repo.create(
+        user_id=user_id,
+        session_id=session_id,
+        topic_id=topic_id,
+        source_mode="feynman",
+        difficulty="medium",
+        is_correct=None,
+        score=feedback.comprehension_score / 100.0,
+    )
+    
     await db.commit()
 
     return FeynmanAttemptResponse(

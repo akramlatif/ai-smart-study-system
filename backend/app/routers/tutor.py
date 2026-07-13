@@ -24,6 +24,7 @@ from app.schemas.tutor import (
 import app.services.session_manager as session_manager
 import app.services.interactive_tutor as interactive_tutor
 from app.repositories.tutor import TutorRepository
+from app.repositories.attempt import AttemptRepository
 
 router = APIRouter(tags=["tutor"])
 
@@ -159,6 +160,19 @@ async def submit_tutor_answer(
         feedback=evaluation["feedback"],
         hint=evaluation.get("hint"),
         attempts=current_step.attempts + 1,
+    )
+
+    # Write attempt history
+    attempt_repo = AttemptRepository(db)
+    topic_id = study_session.topics[-1].id if study_session.topics else None
+    await attempt_repo.create(
+        user_id=user_id,
+        session_id=session_id,
+        topic_id=topic_id,
+        source_mode="tutor",
+        difficulty=tutor_session.difficulty_level,
+        is_correct=evaluation["is_correct"],
+        score=evaluation["score"],
     )
 
     # Update counts

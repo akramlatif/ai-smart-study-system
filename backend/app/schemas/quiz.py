@@ -25,3 +25,13 @@ class QuizQuestion(BaseModel):
 class QuizFilter(BaseModel):
     difficulty: Literal["easy", "medium", "hard"] | None = None
     question_type: Literal["multiple_choice", "short_answer", "true_false", "fill_blank"] | None = None
+
+
+class QuizAnswerRequest(BaseModel):
+    answer: str
+
+
+class QuizAnswerResponse(BaseModel):
+    is_correct: bool
+    correct_answer: str
+    explanation: str | None = None

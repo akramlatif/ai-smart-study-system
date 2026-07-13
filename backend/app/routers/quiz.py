@@ -6,7 +6,8 @@ from app.core.database import get_db
 from app.core.security import get_current_user_id
 from app.repositories.quiz import QuizRepository
 from app.repositories.session import SessionRepository
-from app.schemas.quiz import QuizQuestion
+from app.repositories.attempt import AttemptRepository
+from app.schemas.quiz import QuizQuestion, QuizAnswerRequest, QuizAnswerResponse
 
 router = APIRouter(tags=["quiz"])
 
@@ -79,3 +80,43 @@ async def get_answer(
     if not question or str(question.session_id) != session_id:
         raise HTTPException(status_code=404, detail="Question not found.")
     return {"correct_answer": question.correct_answer, "explanation": question.explanation}
+
+
+@router.post("/sessions/{session_id}/quiz/{question_id}/answer", response_model=QuizAnswerResponse)
+async def submit_answer(
+    session_id: str,
+    question_id: str,
+    body: QuizAnswerRequest,
+    user_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    # 1. Verify access and get question
+    quiz_repo = QuizRepository(db)
+    question = await quiz_repo.get_by_id(uuid.UUID(question_id))
+    if not question or str(question.session_id) != session_id:
+        raise HTTPException(status_code=404, detail="Question not found.")
+
+    # 2. Check correctness (simple matching for MCQ, otherwise requires LLM for open-ended, 
+    # but for simplicity we'll assume basic string match for MCQ and true_false)
+    # The requirement says "checks correctness against correct_answer"
+    is_correct = (body.answer.strip().lower() == str(question.correct_answer).strip().lower())
+
+    # 3. Write attempt history
+    attempt_repo = AttemptRepository(db)
+    await attempt_repo.create(
+        user_id=user_id,
+        session_id=session_id,
+        topic_id=str(question.topic_id) if question.topic_id else None,
+        source_mode="quiz",
+        difficulty=question.difficulty,
+        is_correct=is_correct,
+        score=1.0 if is_correct else 0.0,
+        quiz_question_id=str(question.id)
+    )
+    await db.commit()
+
+    return QuizAnswerResponse(
+        is_correct=is_correct,
+        correct_answer=question.correct_answer,
+        explanation=question.explanation
+    )

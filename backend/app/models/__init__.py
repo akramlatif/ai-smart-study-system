@@ -7,6 +7,7 @@ from app.models.document import Document
 from app.models.feynman import FeynmanAttempt
 from app.models.socratic import SocraticSession, SocraticQAPair
 from app.models.tutor import TutorSession, TutorStep
+from app.models.attempt import QuestionAttempt
 
 __all__ = [
     "User",
@@ -20,4 +21,5 @@ __all__ = [
     "SocraticQAPair",
     "TutorSession",
     "TutorStep",
+    "QuestionAttempt",
 ]

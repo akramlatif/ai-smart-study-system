@@ -4,6 +4,7 @@ from app.repositories.topic import TopicRepository
 from app.repositories.explanation import ExplanationRepository
 from app.repositories.quiz import QuizRepository
 from app.repositories.document import DocumentRepository
+from app.repositories.attempt import AttemptRepository
 
 __all__ = [
     "UserRepository",
@@ -12,4 +13,5 @@ __all__ = [
     "ExplanationRepository",
     "QuizRepository",
     "DocumentRepository",
+    "AttemptRepository",
 ]
