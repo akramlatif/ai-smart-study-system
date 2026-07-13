@@ -56,8 +56,13 @@ export function InputPanel() {
       if (result.explanations) addExplanations(result.explanations)
       if (result.quiz_questions) addQuizQuestions(result.quiz_questions)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Analysis failed.'
-      setLocalError(msg)
+      // axios attaches response data; our interceptor already extracts `detail`
+      const axiosErr = err as { response?: { data?: { detail?: string } }; message?: string }
+      const msg =
+        axiosErr?.response?.data?.detail ||
+        axiosErr?.message ||
+        'Analysis failed. Please try again.'
+      setLocalError(typeof msg === 'string' ? msg : JSON.stringify(msg))
     } finally {
       setLoading(false)
     }
@@ -73,8 +78,12 @@ export function InputPanel() {
       if (result.explanations) addExplanations(result.explanations)
       if (result.quiz_questions) addQuizQuestions(result.quiz_questions)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'File analysis failed.'
-      setLocalError(msg)
+      const axiosErr = err as { response?: { data?: { detail?: string } }; message?: string }
+      const msg =
+        axiosErr?.response?.data?.detail ||
+        axiosErr?.message ||
+        'File analysis failed. Please try again.'
+      setLocalError(typeof msg === 'string' ? msg : JSON.stringify(msg))
     } finally {
       setLoading(false)
     }
