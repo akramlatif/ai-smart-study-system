@@ -18,7 +18,7 @@ apiClient.interceptors.request.use((config) => {
   return config
 })
 
-// Response interceptor — handle auth errors
+// Response interceptor — handle auth errors and extract backend messages
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -27,6 +27,13 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('auth_user')
       window.location.href = '/login'
     }
+
+    // Try to extract a useful message from the FastAPI detail field
+    if (error.response?.data?.detail) {
+      const detail = error.response.data.detail
+      error.message = typeof detail === 'string' ? detail : JSON.stringify(detail)
+    }
+
     return Promise.reject(error)
   }
 )

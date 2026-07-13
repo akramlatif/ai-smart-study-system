@@ -4,7 +4,7 @@ SocraticTutor service — generates Socratic questions using Gemini.
 from pathlib import Path
 from app.schemas.socratic import SocraticQuestion, SocraticResponse, QuestionAnswerPair
 from app.schemas.topic import TopicAnalysis
-from app.core.gemini import generate_json
+from app.core.llm import generate_json
 
 START_PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "socratic_start.txt"
 RESPOND_PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "socratic_respond.txt"

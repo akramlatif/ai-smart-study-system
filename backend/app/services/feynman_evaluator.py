@@ -4,7 +4,7 @@ FeynmanEvaluator service — evaluates student explanations using Gemini.
 from pathlib import Path
 from app.schemas.feynman import FeynmanFeedback
 from app.schemas.topic import TopicAnalysis
-from app.core.gemini import generate_json
+from app.core.llm import generate_json
 
 PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "feynman_evaluation.txt"
 

@@ -6,7 +6,7 @@ asks questions, evaluates answers, adapts difficulty.
 import os
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from app.core.gemini import generate_json
+from app.core.llm import generate_json
 
 _PLAN_PROMPT_PATH = os.path.join(os.path.dirname(__file__), "../../prompts/tutor_plan_subtopics.txt")
 _TEACH_PROMPT_PATH = os.path.join(os.path.dirname(__file__), "../../prompts/tutor_teach_subtopic.txt")

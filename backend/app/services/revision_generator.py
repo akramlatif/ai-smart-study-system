@@ -14,7 +14,7 @@ from app.schemas.revision import (
     KeyDefinition,
     ExamQuestion,
 )
-from app.core.gemini import generate_json
+from app.core.llm import generate_json
 
 _PROMPT_PATH = os.path.join(
     os.path.dirname(__file__), "../../prompts/revision_generation.txt"

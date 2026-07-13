@@ -5,7 +5,7 @@ import os
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from app.schemas.topic import TopicAnalysis
-from app.core.gemini import generate_json
+from app.core.llm import generate_json
 
 _PROMPT_PATH = os.path.join(os.path.dirname(__file__), "../../prompts/topic_analysis.txt")
 
