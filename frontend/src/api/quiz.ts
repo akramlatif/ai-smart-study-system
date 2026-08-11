@@ -25,3 +25,19 @@ export async function getAnswer(
   const response = await apiClient.get(`/sessions/${sessionId}/quiz/${questionId}/answer`)
   return response.data
 }
+
+export async function submitAnswer(
+  sessionId: string,
+  questionId: string,
+  body: { answer: string }
+): Promise<{ is_correct: boolean; correct_answer: string; explanation: string | null }> {
+  const response = await apiClient.post(`/sessions/${sessionId}/quiz/${questionId}/answer`, body)
+  return response.data
+}
+
+export const quizApi = {
+  getQuiz,
+  saveForReview,
+  getAnswer,
+  submitAnswer
+}
