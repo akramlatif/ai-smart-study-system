@@ -1,6 +1,6 @@
 # SmartStudy AI — AI-Powered Smart Study System
 
-An adaptive AI tutor that transforms raw educational content into structured, personalized learning experiences. Paste notes, upload PDFs, or ask questions — get multi-level explanations, context-aware quizzes, and a conversational tutor.
+An adaptive AI tutor that transforms raw educational content into structured, personalized learning experiences. Paste notes, upload PDFs, or ask questions get multi-level explanations, context-aware quizzes, and a conversational tutor.
 
 ## Tech Stack
 
