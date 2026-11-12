@@ -1,6 +1,13 @@
 # SmartStudy AI — AI-Powered Smart Study System
 
-An adaptive AI tutor that transforms raw educational content into structured, personalized learning experiences. Paste notes, upload PDFs, or ask questions get multi-level explanations, context-aware quizzes, and a conversational tutor.
+An adaptive AI tutor that transforms raw educational content into structured, personalized learning experiences. Paste notes, upload PDFs, or ask questions — get multi-level explanations, context-aware quizzes, and a conversational tutor.
+
+## What's New — Dashboard & Progress v2
+
+- **🔥 Study Streaks** — tracks your current and longest consecutive study-day streaks, plus total active days.
+- **📈 Weekly Activity (real data)** — the dashboard chart is now powered by a live API (`/progress/weekly-activity`) instead of hardcoded numbers.
+- **⚡ Expanded Quick Actions** — Deep Dive, Quick Quiz, My Library, and Spaced Review, all one click away.
+- **🎨 Dashboard UI refresh** — gradient welcome banner with streak badge, skeleton loading states, dark-mode fixes across all panels, and a responsive layout that stacks on smaller screens.
 
 ## Tech Stack
 
@@ -59,6 +66,14 @@ npm run dev
 
 The app will be available at `http://localhost:5173`.
 
+## API Endpoints (Progress)
+
+| Endpoint | Description |
+|---|---|
+| `GET /progress/metrics` | Aggregate learning metrics (sessions, topics, accuracy, review queue) |
+| `GET /progress/weekly-activity` | Sessions & quiz questions per day, last 7 days |
+| `GET /progress/streak` | Current streak, longest streak, and active days |
+
 ## Environment Variables
 
 ### Backend (`backend/.env`)
@@ -95,4 +110,3 @@ cd frontend
 npm run test                # Component tests (Vitest + RTL)
 npm run test:e2e            # E2E tests (Playwright)
 ```
-
